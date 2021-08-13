@@ -1,6 +1,7 @@
 const { species } = require('./data');
 const { employees } = require('./data');
 const { prices } = require('./data');
+const { hours } = require('./data');
 const data = require('./data');
 
 function getSpeciesByIds(id1, id2) {
@@ -63,11 +64,38 @@ function calculateEntry(entrants) {
 }
 
 function getAnimalMap(options) {
-  // seu código aqui
+  const obj = { NE: [], NW: [], SE: [], SW: [] };
+  Object.keys(obj).forEach((key) => {
+    obj[key] = species.filter(({ location }) => location === key).map(({ name }) => name);
+    if (!options) {
+      return obj;
+    }
+    obj[key] = obj[key].map((specie) => {
+      const animalObj = {};
+      const animals = species.find(({ name }) => name === specie).residents;
+      animalObj[specie] = animals.map(({ name }) => name);
+      return animalObj;
+    });
+  });
+  return obj;
+}
+
+function verifyHour(day) {
+  const opn = (hours[day].open > 12) ? `${hours[day].open - 12}pm` : `${hours[day].open}am`;
+  const cls = (hours[day].close > 12) ? `${hours[day].close - 12}pm` : `${hours[day].close}am`;
+  return (day === 'Monday') ? 'CLOSED' : `Open from ${opn} until ${cls}`;
 }
 
 function getSchedule(dayName) {
-  // seu código aqui
+  const obj = {};
+  if (!dayName) {
+    Object.keys(hours).forEach((key) => {
+      obj[key] = verifyHour(key);
+    });
+    return obj;
+  }
+  obj[dayName] = verifyHour(dayName);
+  return obj;
 }
 
 function getOldestFromFirstSpecies(id) {

@@ -63,28 +63,35 @@ function calculateEntry(entrants) {
   return Object.keys(entrants).reduce((acc, type) => acc + entrants[type] * prices[type], 0);
 }
 
+const animalsIncludeNames = (animals, options) => animals.map((animal) => {
+  if (options.sex) {
+    let residentsBySex = animal.residents.filter(({ sex }) => sex === options.sex);
+    const residentsBySexSorted = { [animal.name]: residentsBySex.map(({ name }) => name).sort() };
+    residentsBySex = { [animal.name]: residentsBySex.map(({ name }) => name) };
+    return (options.sorted === true) ? residentsBySexSorted : residentsBySex;
+  }
+  const allResidents = { [animal.name]: animal.residents.map(({ name }) => name) };
+  const allResidentsSorted = { [animal.name]: animal.residents.map(({ name }) => name).sort() };
+  return (options.sorted === true) ? allResidentsSorted : allResidents;
+});
+
 function getAnimalMap(options) {
   const obj = { NE: [], NW: [], SE: [], SW: [] };
   Object.keys(obj).forEach((key) => {
-    obj[key] = species.filter(({ location }) => location === key).map(({ name }) => name);
-    if (!options) {
-      return obj;
+    const animals = species.filter(({ location }) => key === location);
+    obj[key] = animals.map(({ name }) => name);
+    if (options && options.includeNames) {
+      obj[key] = animalsIncludeNames(animals, options);
     }
-    obj[key] = obj[key].map((specie) => {
-      const animalObj = {};
-      const animals = species.find(({ name }) => name === specie).residents;
-      animalObj[specie] = animals.map(({ name }) => name);
-      return animalObj;
-    });
   });
   return obj;
 }
 
-function verifyHour(day) {
+const verifyHour = (day) => {
   const opn = (hours[day].open > 12) ? `${hours[day].open - 12}pm` : `${hours[day].open}am`;
   const cls = (hours[day].close > 12) ? `${hours[day].close - 12}pm` : `${hours[day].close}am`;
   return (day === 'Monday') ? 'CLOSED' : `Open from ${opn} until ${cls}`;
-}
+};
 
 function getSchedule(dayName) {
   const obj = {};
@@ -127,12 +134,8 @@ const findEmployee = ({ firstName: fn, lastName: ln, id }, idOrName) => {
 };
 
 function getEmployeeCoverage(idOrName) {
-  const obj = {};
   if (!idOrName) {
-    employees.forEach((employee) => {
-      Object.assign(obj, setEmployee(employee));
-    });
-    return obj;
+    return employees.reduce((acc, employee) => Object.assign(acc, setEmployee(employee)), {});
   }
   const employee = employees.find((element) => findEmployee(element, idOrName));
   return setEmployee(employee);
